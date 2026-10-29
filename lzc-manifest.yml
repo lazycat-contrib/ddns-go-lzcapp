@@ -1,0 +1,79 @@
+application:
+  subdomain: ddns-go
+  multi_instance: false
+  upstreams:
+    - location: /
+      backend: http://ddns-go:9876/
+  injects:
+    - id: ddns-go-capture-credentials
+      auth_required: true
+      on: request
+      when:
+        - /loginFunc
+        - /save
+      do: |
+        const path = String(ctx.request.path || "");
+        if (String(ctx.request.method || "").toUpperCase() !== "POST" ||
+            (path !== "/loginFunc" && path !== "/save")) return;
+        let body;
+        try { body = ctx.body.getJSON(); } catch { return; }
+        if (!body || typeof body !== "object") return;
+        if (typeof body.Username === "string" && body.Username.length > 0) {
+          const username = path === "/save" ? body.Username.trim() : body.Username;
+          if (username) ctx.flow.set("ddns_go_pending_username", username);
+        }
+        if (typeof body.Password === "string" && body.Password.length > 0) {
+          ctx.flow.set("ddns_go_pending_password", body.Password);
+        }
+    - id: ddns-go-remember-successful-credentials
+      auth_required: true
+      on: response
+      when:
+        - /loginFunc
+        - /save
+      do: |
+        if (ctx.status !== 200) return;
+        let body;
+        try { body = ctx.body.getJSON(); } catch { return; }
+        if (!body || body.Code !== 200) return;
+        const username = ctx.flow.get("ddns_go_pending_username");
+        const password = ctx.flow.get("ddns_go_pending_password");
+        if (typeof username === "string" && username.length > 0) {
+          ctx.persist.set("ddns-go.username", username);
+        }
+        if (typeof password === "string" && password.length > 0) {
+          ctx.persist.set("ddns-go.password", password);
+        }
+    - id: ddns-go-login-autofill
+      auth_required: true
+      when:
+        - /login
+      do:
+        - src: builtin://simple-inject-password
+          params:
+            user:
+              $persist: ddns-go.username
+            password:
+              $persist: ddns-go.password
+            userSelector: input#Username
+            passwordSelector: input#Password[type="password"]
+            requireUser: true
+            onlyFillEmpty: true
+            autoSubmit: false
+services:
+  ddns-go:
+    # upstream: docker.io/jeessy/ddns-go:v6.17.7
+    image: docker.1ms.run/jeessy/ddns-go:v6.17.7
+    command: -l :9876 -f 300 -c /root/.ddns_go_config.yaml
+    environment:
+      - TZ=Asia/Shanghai
+    binds:
+      - /lzcapp/var/config:/root
+usage: |
+  DDNS-GO 动态 DNS 更新工具；配置和 DNS 服务商凭据保存于 /lzcapp/var/config，不包含预置账号或任何服务商密钥。
+  首次启动请在30分钟内通过登录页创建原生账号和强密码；超时按上游要求重启应用后初始化。入口保留懒猫登录保护。
+  只有登录或保存配置返回业务 Code=200 时才记住用户名及非空密码；后续在登录页自动填充，不自动提交，避免失败重试锁定。
+  本包使用上游支持的桥接网络部署，不挂载宿主网络或系统目录。请优先用公网 IP 查询接口，不要把容器网卡私网地址误写到域名；IPv6也需要先确认查询接口和容器出口可用。
+  服务商账号、API密钥、域名和实际 DNS 更新由使用者自行配置；本包不会预置或测试真实域名，也不自动修改任何外部 DNS 记录。
+  配置文件可能含服务商密钥，请勿分享配置、日志或备份中的凭据。保留 TLS 验证，不使用 skipVerify。
+  无文件选择器拦截、无 smoke 或容器启动门禁。未进行懒猫实机、登录填充、IPv4/IPv6探测或真实 DNS 更新验证。

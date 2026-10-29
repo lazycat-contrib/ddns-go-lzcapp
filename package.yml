@@ -1,0 +1,18 @@
+package: community.lazycat.app.ddns-go
+version: 6.17.7
+name: DDNS-GO
+description: A dynamic DNS updater supporting multiple DNS providers and a web configuration interface.
+min_os_version: "1.5.0"
+homepage: https://github.com/jeessy2/ddns-go
+author: jeessy2
+license: MIT
+permissions:
+  required:
+    - net.internet
+locales:
+  zh:
+    name: DDNS-GO
+    description: 支持多家 DNS 服务商的动态域名解析更新工具，提供网页配置界面。
+  en:
+    name: DDNS-GO
+    description: A dynamic DNS updater supporting multiple DNS providers and a web configuration interface.
