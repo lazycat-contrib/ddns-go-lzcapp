@@ -20,3 +20,7 @@ The persistent YAML can contain provider credentials: protect configuration file
 Reusable LazyCat workflow, versioned Release LPK. Automatic private and official publishers stay disabled; submit only the verified Release URL/SHA256 to MiaoMiao community store after full upstream/alias duplicate checks.
 
 No file-chooser interceptor, smoke job or runtime gate. Configuration and synthetic injection-branch checks do not establish device startup, actual autofill, public-IP discovery or real DNS updates.
+
+## Community release
+
+Published as MiaoMiao app 660, APPROVED, Network category 18, version 6.17.7. Build 40883025489 completed with only the reusable LazyCat job; logs confirm matching-mirror verification for `jeessy/ddns-go:v6.17.7`. The 40960-byte LPK was independently downloaded and matched SHA256 `28fbfbf18c55782f266e84fec3b6f79cc990347715df69674d2dce1684936754`. Store identity/version/category were independently queried. Eight synthetic injection-branch checks passed, not runtime/login/DNS-update tests.
